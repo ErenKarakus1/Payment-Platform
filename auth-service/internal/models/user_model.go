@@ -34,3 +34,12 @@ type CreateUserResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (r *LoginRequest) Normalize() {
+	r.Email = strings.ToLower(strings.TrimSpace(r.Email))
+}

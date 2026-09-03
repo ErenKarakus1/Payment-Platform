@@ -14,3 +14,7 @@ func GeneratePasswordHash(password string) (string, error) {
 	hashString := string(hash)
 	return hashString, nil
 }
+
+func CompareHashAndPassword(passwordHash string, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
+}
