@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS customers (
+    id UUID PRIMARY KEY,
+    merchant_id UUID NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
