@@ -7,17 +7,17 @@ import (
 	"github.com/google/uuid"
 )
 
-var ErrMissingUserID = errors.New("missing user id")
-var ErrInvalidUserID = errors.New("invalid user id")
+var ErrMissingMerchantID = errors.New("missing user id")
+var ErrInvalidMerchantID = errors.New("invalid user id")
 
-func GetUserID(c *gin.Context) (uuid.UUID, error) {
-	userID := c.GetHeader("X-User-ID")
+func GetMerchantID(c *gin.Context) (uuid.UUID, error) {
+	userID := c.GetHeader("X-Merchant-ID")
 	if userID == "" {
-		return uuid.Nil, ErrMissingUserID
+		return uuid.Nil, ErrMissingMerchantID
 	}
 	parsedUserID, err := uuid.Parse(userID)
 	if err != nil {
-		return uuid.Nil, ErrInvalidUserID
+		return uuid.Nil, ErrInvalidMerchantID
 	}
 	return parsedUserID, nil
 }

@@ -15,13 +15,13 @@ import (
 
 func CreateCustomerHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		userID, err := utils.GetUserID(ctx)
+		merchantID, err := utils.GetMerchantID(ctx)
 		if err != nil {
-			if errors.Is(err, utils.ErrMissingUserID) {
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": "user id is required"})
+			if errors.Is(err, utils.ErrMissingMerchantID) {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "merchant id is required"})
 				return
-			} else if errors.Is(err, utils.ErrInvalidUserID) {
-				ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+			} else if errors.Is(err, utils.ErrInvalidMerchantID) {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid merchant id"})
 				return
 			} else {
 				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
@@ -38,7 +38,7 @@ func CreateCustomerHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		customer := services.CreateCustomerFromCreateCustomerRequest(req, userID)
+		customer := services.CreateCustomerFromCreateCustomerRequest(req, merchantID)
 		createdCustomer, err := repository.CreateCustomer(ctx.Request.Context(), pool, customer)
 		if err != nil {
 			if errors.Is(err, repository.ErrEmailAlreadyUsed) {
@@ -49,5 +49,32 @@ func CreateCustomerHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		ctx.JSON(http.StatusOK, createdCustomer)
+	}
+}
+
+func GetAllCustomersHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		merchantID, err := utils.GetMerchantID(ctx)
+		if err != nil {
+			if errors.Is(err, utils.ErrMissingMerchantID) {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "merchant id is required"})
+				return
+			} else if errors.Is(err, utils.ErrInvalidMerchantID) {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid merchant id"})
+				return
+			} else {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+				return
+			}
+		}
+		customers, err := repository.GetAllCustomers(ctx.Request.Context(), pool, merchantID)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		if customers == nil {
+			customers = []models.Customer{}
+		}
+		ctx.JSON(http.StatusOK, customers)
 	}
 }

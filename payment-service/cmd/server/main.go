@@ -21,7 +21,7 @@ func main() {
 	router := gin.Default()
 
 	router.POST("/customers", handlers.CreateCustomerHandler(pool))
-
+	router.GET("/customers", handlers.GetAllCustomersHandler(pool))
 	router.Run(":8082")
 
 }
