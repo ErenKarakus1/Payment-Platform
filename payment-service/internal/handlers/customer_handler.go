@@ -49,7 +49,7 @@ func CreateCustomerHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 			return
 		}
-		ctx.JSON(http.StatusOK, createdCustomer)
+		ctx.JSON(http.StatusCreated, createdCustomer)
 	}
 }
 

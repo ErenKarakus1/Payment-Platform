@@ -23,6 +23,7 @@ func main() {
 	router.POST("/customers", handlers.CreateCustomerHandler(pool))
 	router.GET("/customers", handlers.GetAllCustomersHandler(pool))
 	router.GET("/customers/:id", handlers.GetCustomerByIDHandler(pool))
+	router.POST("/payments", handlers.CreatePaymentHandler(pool))
 	router.Run(":8082")
 
 }
