@@ -6,11 +6,13 @@ import (
 
 	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/models"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var ErrEmailAlreadyUsed = errors.New("email is already used")
+var ErrCustomerNotFound = errors.New("customer not found")
 
 const createCustomerQuery = `
 	INSERT INTO customers (
@@ -38,6 +40,18 @@ const getAllCustomersQuery = `
 	FROM customers
 	WHERE merchant_id=$1
 	ORDER BY created_at DESC
+`
+
+const getCustomerByIDQuery = `
+	SELECT
+		id,
+		merchant_id,
+		name,
+		email,
+		created_at
+	FROM customers
+	WHERE id=$1
+	AND merchant_id=$2
 `
 
 func CreateCustomer(ctx context.Context, pool *pgxpool.Pool, customer models.Customer) (models.Customer, error) {
@@ -98,4 +112,27 @@ func GetAllCustomers(ctx context.Context, pool *pgxpool.Pool, merchantID uuid.UU
 		return []models.Customer{}, errors.New("internal server error")
 	}
 	return customers, nil
+}
+
+func GetCustomerByID(ctx context.Context, pool *pgxpool.Pool, merchantID uuid.UUID, customerID uuid.UUID) (models.Customer, error) {
+	var customer models.Customer
+	err := pool.QueryRow(
+		ctx,
+		getCustomerByIDQuery,
+		customerID,
+		merchantID,
+	).Scan(
+		&customer.ID,
+		&customer.MerchantID,
+		&customer.Name,
+		&customer.Email,
+		&customer.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Customer{}, ErrCustomerNotFound
+		}
+		return models.Customer{}, errors.New("internal server error")
+	}
+	return customer, nil
 }
