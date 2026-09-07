@@ -5,7 +5,12 @@ import (
 	"github.com/google/uuid"
 )
 
-const PaymentStatusPending = "pending"
+const (
+	PaymentStatusPending    = "pending"
+	PaymentStatusProcessing = "processing"
+	PaymentStatusSucceeded  = "succeeded"
+	PaymentStatusFailed     = "failed"
+)
 
 func CreatePaymentFromCreatePaymentRequest(r models.CreatePaymentRequest, merchantID uuid.UUID, idempotencyKey uuid.UUID) models.Payment {
 	return models.Payment{

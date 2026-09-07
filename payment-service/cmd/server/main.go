@@ -26,6 +26,7 @@ func main() {
 	router.POST("/payments", handlers.CreatePaymentHandler(pool))
 	router.GET("/payments", handlers.GetAllPaymentsHandler(pool))
 	router.GET("/payments/:id", handlers.GetPaymentByIDHandler(pool))
+	router.POST("/payments/:id/process", handlers.ProcessPaymentHandler(pool))
 	router.Run(":8082")
 
 }

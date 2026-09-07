@@ -85,6 +85,27 @@ const getAllPaymentsQuery = `
 	WHERE merchant_id=$1
 `
 
+const updatePaymentStatusQuery = `
+	UPDATE payments
+	SET
+		status=$1,
+		updated_at=NOW()
+	WHERE id=$2
+	AND merchant_id=$3
+	AND status=$4
+	RETURNING
+		id,
+		merchant_id,
+		customer_id,
+		amount_cents,
+		refunded_amount_cents,
+		currency,
+		status,
+		idempotency_key,
+		created_at,
+		updated_at
+`
+
 func CreatePayment(ctx context.Context, pool *pgxpool.Pool, req models.Payment) (models.Payment, error) {
 	var payment models.Payment
 	err := pool.QueryRow(
@@ -205,4 +226,34 @@ func GetAllPayments(ctx context.Context, pool *pgxpool.Pool, merchantID uuid.UUI
 		return []models.Payment{}, errors.New("internal server error")
 	}
 	return payments, nil
+}
+
+func UpdatePaymentStatus(ctx context.Context, pool *pgxpool.Pool, merchantID uuid.UUID, paymentID uuid.UUID, currentStatus string, targetStatus string) (models.Payment, error) {
+	var payment models.Payment
+	err := pool.QueryRow(
+		ctx,
+		updatePaymentStatusQuery,
+		targetStatus,
+		paymentID,
+		merchantID,
+		currentStatus,
+	).Scan(
+		&payment.ID,
+		&payment.MerchantID,
+		&payment.CustomerID,
+		&payment.AmountCents,
+		&payment.RefundedAmountCents,
+		&payment.Currency,
+		&payment.Status,
+		&payment.IdempotencyKey,
+		&payment.CreatedAt,
+		&payment.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Payment{}, ErrPaymentNotFound
+		}
+		return models.Payment{}, errors.New("internal server error")
+	}
+	return payment, nil
 }
