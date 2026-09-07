@@ -29,3 +29,10 @@ type CreatePaymentRequest struct {
 func (r *CreatePaymentRequest) Normalize() {
 	r.Currency = strings.ToUpper(strings.TrimSpace(r.Currency))
 }
+
+const (
+	PaymentStatusPending    = "pending"
+	PaymentStatusProcessing = "processing"
+	PaymentStatusSucceeded  = "succeeded"
+	PaymentStatusFailed     = "failed"
+)

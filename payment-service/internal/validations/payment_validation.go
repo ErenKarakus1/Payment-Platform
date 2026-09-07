@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/models"
-	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/services"
 	"github.com/google/uuid"
 )
 
@@ -35,10 +34,10 @@ func ValidateCreatePaymentRequest(r models.CreatePaymentRequest) error {
 
 func ValidatePaymentStatusTransition(currentStatus string, targetStatus string) bool {
 	switch targetStatus {
-	case services.PaymentStatusProcessing:
-		return currentStatus == services.PaymentStatusPending
-	case services.PaymentStatusFailed, services.PaymentStatusSucceeded:
-		return currentStatus == services.PaymentStatusProcessing
+	case models.PaymentStatusProcessing:
+		return currentStatus == models.PaymentStatusPending
+	case models.PaymentStatusFailed, models.PaymentStatusSucceeded:
+		return currentStatus == models.PaymentStatusProcessing
 	default:
 		return false
 	}

@@ -8,7 +8,6 @@ import (
 	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/repository"
 	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/services"
 	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/utils"
-	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/validations"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -39,40 +38,25 @@ func CreatePaymentHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid idempotency key"})
 			return
 		}
-		existentPayment, err := repository.GetPaymentByIdempotencyKey(ctx.Request.Context(), pool, parsedIdempotencyKey, merchantID)
-		if err == nil {
-			ctx.JSON(http.StatusCreated, existentPayment)
-			return
-		} else if !errors.Is(err, repository.ErrPaymentNotFound) {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-			return
-		}
 		var req models.CreatePaymentRequest
 		if err := ctx.ShouldBindJSON(&req); err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 			return
 		}
-		req.Normalize()
-		if err := validations.ValidateCreatePaymentRequest(req); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		_, err = repository.GetCustomerByID(ctx.Request.Context(), pool, merchantID, req.CustomerID)
+
+		payment, err := services.CreatePayment(ctx.Request.Context(), pool, req, merchantID, parsedIdempotencyKey)
 		if err != nil {
-			if errors.Is(err, repository.ErrCustomerNotFound) {
-				ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			if errors.Is(err, services.ErrInternalServerError) {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+				return
+			} else if errors.Is(err, repository.ErrCustomerNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "customer not found"})
 				return
 			}
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
-		payment := services.CreatePaymentFromCreatePaymentRequest(req, merchantID, parsedIdempotencyKey)
-		createdPayment, err := repository.CreatePayment(ctx.Request.Context(), pool, payment)
-		if err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-			return
-		}
-		ctx.JSON(http.StatusCreated, createdPayment)
+		ctx.JSON(http.StatusCreated, payment)
 	}
 }
 
@@ -166,23 +150,16 @@ func ProcessPaymentHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid payment id"})
 			return
 		}
-		payment, err := repository.GetPaymentByID(ctx.Request.Context(), pool, parsedPaymentID, merchantID)
+		updatedPayment, err := services.ProcessPayment(ctx.Request.Context(), pool, parsedPaymentID, merchantID)
 		if err != nil {
-			if errors.Is(err, repository.ErrPaymentNotFound) {
+			if errors.Is(err, services.ErrInternalServerError) {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+				return
+			} else if errors.Is(err, repository.ErrPaymentNotFound) {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
 				return
-			}
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-			return
-		}
-		if !validations.ValidatePaymentStatusTransition(payment.Status, services.PaymentStatusProcessing) {
-			ctx.JSON(http.StatusConflict, gin.H{"error": "invalid status transition"})
-			return
-		}
-		updatedPayment, err := repository.UpdatePaymentStatus(ctx.Request.Context(), pool, merchantID, parsedPaymentID, payment.Status, services.PaymentStatusProcessing)
-		if err != nil {
-			if errors.Is(err, repository.ErrPaymentNotFound) {
-				ctx.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
+			} else if errors.Is(err, services.ErrInvalidStatusTransition) {
+				ctx.JSON(http.StatusConflict, gin.H{"error": "invalid status transition"})
 				return
 			}
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})

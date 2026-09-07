@@ -8,7 +8,6 @@ import (
 	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/repository"
 	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/services"
 	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/utils"
-	"github.com/ErenKarakus1/Payment-Platform/payment-service/internal/validations"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -34,22 +33,19 @@ func CreateCustomerHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 			return
 		}
-		req.Normalize()
-		if err := validations.ValidateCreateCustomerRequest(req); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		customer := services.CreateCustomerFromCreateCustomerRequest(req, merchantID)
-		createdCustomer, err := repository.CreateCustomer(ctx.Request.Context(), pool, customer)
+		customer, err := services.CreateCustomer(ctx.Request.Context(), pool, merchantID, req)
 		if err != nil {
 			if errors.Is(err, repository.ErrEmailAlreadyUsed) {
 				ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 				return
+			} else if errors.Is(err, services.ErrInternalServerError) {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+				return
 			}
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
-		ctx.JSON(http.StatusCreated, createdCustomer)
+		ctx.JSON(http.StatusCreated, customer)
 	}
 }
 
