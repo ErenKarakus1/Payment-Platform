@@ -42,3 +42,10 @@ func ValidatePaymentStatusTransition(currentStatus string, targetStatus string) 
 		return false
 	}
 }
+
+func ValidateRefundRequest(r models.RefundRequest) error {
+	if r.AmountCents <= 0 {
+		return errors.New("invalid refund amount")
+	}
+	return nil
+}

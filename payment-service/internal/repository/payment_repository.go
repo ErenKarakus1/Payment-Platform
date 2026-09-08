@@ -106,6 +106,38 @@ const updatePaymentStatusQuery = `
 		updated_at
 `
 
+const refundPaymentQuery = `
+	UPDATE payments
+	SET
+		refunded_amount_cents=$1,
+		updated_at=NOW(),
+		status=$2
+	WHERE id=$3
+	AND merchant_id=$4
+	AND refunded_amount_cents=$5
+	RETURNING
+		id,
+		merchant_id,
+		customer_id,
+		amount_cents,
+		refunded_amount_cents,
+		currency,
+		status,
+		idempotency_key,
+		created_at,
+		updated_at
+`
+
+const createRefundQuery = `
+	INSERT INTO refunds (
+		id,
+		payment_id,
+		merchant_id,
+		amount_cents
+	)
+	VALUES ($1,$2,$3,$4)
+`
+
 func CreatePayment(ctx context.Context, pool *pgxpool.Pool, req models.Payment) (models.Payment, error) {
 	var payment models.Payment
 	err := pool.QueryRow(
@@ -255,5 +287,56 @@ func UpdatePaymentStatus(ctx context.Context, pool *pgxpool.Pool, merchantID uui
 		}
 		return models.Payment{}, errors.New("internal server error")
 	}
+	return payment, nil
+}
+
+func RefundPayment(ctx context.Context, pool *pgxpool.Pool, paymentID uuid.UUID, merchantID uuid.UUID, currentRefundedAmount int64, refundAmount int64, targetStatus string, refund models.Refund) (models.Payment, error) {
+	var payment models.Payment
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return models.Payment{}, errors.New("internal server error")
+	}
+	defer tx.Rollback(ctx)
+	_, err = tx.Exec(
+		ctx,
+		createRefundQuery,
+		refund.ID,
+		refund.PaymentID,
+		refund.MerchantID,
+		refund.AmountCents,
+	)
+	if err != nil {
+		return models.Payment{}, errors.New("internal server error")
+	}
+	err = tx.QueryRow(
+		ctx,
+		refundPaymentQuery,
+		refundAmount,
+		targetStatus,
+		paymentID,
+		merchantID,
+		currentRefundedAmount,
+	).Scan(
+		&payment.ID,
+		&payment.MerchantID,
+		&payment.CustomerID,
+		&payment.AmountCents,
+		&payment.RefundedAmountCents,
+		&payment.Currency,
+		&payment.Status,
+		&payment.IdempotencyKey,
+		&payment.CreatedAt,
+		&payment.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Payment{}, ErrPaymentNotFound
+		}
+		return models.Payment{}, errors.New("internal server error")
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return models.Payment{}, errors.New("internal server error")
+	}
+
 	return payment, nil
 }

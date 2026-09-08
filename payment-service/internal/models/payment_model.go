@@ -7,6 +7,15 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	PaymentStatusPending           = "pending"
+	PaymentStatusProcessing        = "processing"
+	PaymentStatusSucceeded         = "succeeded"
+	PaymentStatusFailed            = "failed"
+	PaymentStatusPartiallyRefunded = "partially_refunded"
+	PaymentStatusRefunded          = "refunded"
+)
+
 type Payment struct {
 	ID                  uuid.UUID `json:"id"`
 	MerchantID          uuid.UUID `json:"merchant_id"`
@@ -30,9 +39,6 @@ func (r *CreatePaymentRequest) Normalize() {
 	r.Currency = strings.ToUpper(strings.TrimSpace(r.Currency))
 }
 
-const (
-	PaymentStatusPending    = "pending"
-	PaymentStatusProcessing = "processing"
-	PaymentStatusSucceeded  = "succeeded"
-	PaymentStatusFailed     = "failed"
-)
+type RefundRequest struct {
+	AmountCents int64 `json:"amount_cents"`
+}
