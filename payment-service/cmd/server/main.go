@@ -29,6 +29,15 @@ func main() {
 	router.POST("/payments/:id/process", handlers.ProcessPaymentHandler(pool))
 	router.POST("/payments/:id/refunds", handlers.RefundHandler(pool))
 	router.GET("/payments/:id/refunds", handlers.GetAllRefundsByPaymentIDHandler(pool))
+
+	/*
+		REMOVE THIS PART IN PROD
+			Payment provider will give success or fail result
+			Status of a payment must change in process service instead of by these endpoints
+	*/
+	router.POST("/payments/:id/succeed", handlers.SucceedPaymentHandler(pool))
+	router.POST("/payments/:id/fail", handlers.FailPaymentHandler(pool))
+
 	router.Run(":8082")
 
 }

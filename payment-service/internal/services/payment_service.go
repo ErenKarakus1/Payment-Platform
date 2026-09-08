@@ -108,3 +108,45 @@ func RefundPayment(ctx context.Context, pool *pgxpool.Pool, merchantID uuid.UUID
 	}
 	return updatedPayment, nil
 }
+
+func SucceedPayment(ctx context.Context, pool *pgxpool.Pool, paymentID uuid.UUID, merchantID uuid.UUID) (models.Payment, error) {
+	payment, err := repository.GetPaymentByID(ctx, pool, paymentID, merchantID)
+	if err != nil {
+		if errors.Is(err, repository.ErrPaymentNotFound) {
+			return models.Payment{}, err
+		}
+		return models.Payment{}, ErrInternalServerError
+	}
+	if !validations.ValidatePaymentStatusTransition(payment.Status, models.PaymentStatusSucceeded) {
+		return models.Payment{}, ErrInvalidStatusTransition
+	}
+	updatedPayment, err := repository.UpdatePaymentStatus(ctx, pool, merchantID, paymentID, payment.Status, models.PaymentStatusSucceeded)
+	if err != nil {
+		if errors.Is(err, repository.ErrPaymentNotFound) {
+			return models.Payment{}, err
+		}
+		return models.Payment{}, ErrInternalServerError
+	}
+	return updatedPayment, nil
+}
+
+func FailPayment(ctx context.Context, pool *pgxpool.Pool, paymentID uuid.UUID, merchantID uuid.UUID) (models.Payment, error) {
+	payment, err := repository.GetPaymentByID(ctx, pool, paymentID, merchantID)
+	if err != nil {
+		if errors.Is(err, repository.ErrPaymentNotFound) {
+			return models.Payment{}, err
+		}
+		return models.Payment{}, ErrInternalServerError
+	}
+	if !validations.ValidatePaymentStatusTransition(payment.Status, models.PaymentStatusFailed) {
+		return models.Payment{}, ErrInvalidStatusTransition
+	}
+	updatedPayment, err := repository.UpdatePaymentStatus(ctx, pool, merchantID, paymentID, payment.Status, models.PaymentStatusFailed)
+	if err != nil {
+		if errors.Is(err, repository.ErrPaymentNotFound) {
+			return models.Payment{}, err
+		}
+		return models.Payment{}, ErrInternalServerError
+	}
+	return updatedPayment, nil
+}

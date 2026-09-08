@@ -214,3 +214,91 @@ func RefundHandler(pool *pgxpool.Pool) gin.HandlerFunc {
 		ctx.JSON(http.StatusOK, payment)
 	}
 }
+
+func SucceedPaymentHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		merchantID, err := utils.GetMerchantID(ctx)
+		if err != nil {
+			if errors.Is(err, utils.ErrMissingMerchantID) {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "merchant id is required"})
+				return
+			} else if errors.Is(err, utils.ErrInvalidMerchantID) {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid merchant id"})
+				return
+			} else {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+				return
+			}
+		}
+		paymentID := ctx.Param("id")
+		if paymentID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "payment id is required"})
+			return
+		}
+		parsedPaymentID, err := uuid.Parse(paymentID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid payment id"})
+			return
+		}
+		updatedPayment, err := services.SucceedPayment(ctx.Request.Context(), pool, parsedPaymentID, merchantID)
+		if err != nil {
+			if errors.Is(err, services.ErrInternalServerError) {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+				return
+			} else if errors.Is(err, repository.ErrPaymentNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
+				return
+			} else if errors.Is(err, services.ErrInvalidStatusTransition) {
+				ctx.JSON(http.StatusConflict, gin.H{"error": "invalid status transition"})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.JSON(http.StatusOK, updatedPayment)
+	}
+}
+
+func FailPaymentHandler(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		merchantID, err := utils.GetMerchantID(ctx)
+		if err != nil {
+			if errors.Is(err, utils.ErrMissingMerchantID) {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "merchant id is required"})
+				return
+			} else if errors.Is(err, utils.ErrInvalidMerchantID) {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid merchant id"})
+				return
+			} else {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+				return
+			}
+		}
+		paymentID := ctx.Param("id")
+		if paymentID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "payment id is required"})
+			return
+		}
+		parsedPaymentID, err := uuid.Parse(paymentID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid payment id"})
+			return
+		}
+		updatedPayment, err := services.FailPayment(ctx.Request.Context(), pool, parsedPaymentID, merchantID)
+		if err != nil {
+			if errors.Is(err, services.ErrInternalServerError) {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+				return
+			} else if errors.Is(err, repository.ErrPaymentNotFound) {
+				ctx.JSON(http.StatusNotFound, gin.H{"error": "payment not found"})
+				return
+			} else if errors.Is(err, services.ErrInvalidStatusTransition) {
+				ctx.JSON(http.StatusConflict, gin.H{"error": "invalid status transition"})
+				return
+			}
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		ctx.JSON(http.StatusOK, updatedPayment)
+	}
+}
