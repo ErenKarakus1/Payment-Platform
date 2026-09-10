@@ -68,6 +68,7 @@ func CreatePayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Prod
 		MerchantID:    merchantID,
 		CustomerID:    createdPayment.CustomerID,
 		CustomerEmail: customer.Email,
+		CustomerName:  customer.Name,
 		AmountCents:   createdPayment.AmountCents,
 		Currency:      createdPayment.Currency,
 	})
@@ -105,6 +106,7 @@ func ProcessPayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Pro
 		MerchantID:    merchantID,
 		CustomerID:    updatedPayment.CustomerID,
 		CustomerEmail: customer.Email,
+		CustomerName:  customer.Name,
 		AmountCents:   updatedPayment.AmountCents,
 		Currency:      updatedPayment.Currency,
 	})
@@ -142,6 +144,7 @@ func SucceedPayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Pro
 		MerchantID:    merchantID,
 		CustomerID:    updatedPayment.CustomerID,
 		CustomerEmail: customer.Email,
+		CustomerName:  customer.Name,
 		AmountCents:   updatedPayment.AmountCents,
 		Currency:      updatedPayment.Currency,
 	})
@@ -179,6 +182,7 @@ func FailPayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Produc
 		MerchantID:    merchantID,
 		CustomerID:    updatedPayment.CustomerID,
 		CustomerEmail: customer.Email,
+		CustomerName:  customer.Name,
 		AmountCents:   updatedPayment.AmountCents,
 		Currency:      updatedPayment.Currency,
 	})

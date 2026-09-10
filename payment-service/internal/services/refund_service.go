@@ -65,6 +65,7 @@ func RefundPayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Prod
 		MerchantID:    merchantID,
 		CustomerID:    updatedPayment.CustomerID,
 		CustomerEmail: customer.Email,
+		CustomerName:  customer.Name,
 		AmountCents:   refund.AmountCents,
 		Currency:      updatedPayment.Currency,
 	})

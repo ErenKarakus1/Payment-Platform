@@ -25,6 +25,7 @@ func main() {
 	)
 
 	defer producer.Close()
+	log.Println("Kafka producer initialized")
 
 	router := gin.Default()
 
