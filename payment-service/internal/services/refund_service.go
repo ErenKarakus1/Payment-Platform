@@ -42,10 +42,13 @@ func RefundPayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Prod
 		return models.Payment{}, errors.New("refund amount exceeds remaining refundable amount")
 	}
 	var targetStatus string
+	var eventType string
 	if payment.RefundedAmountCents+refundRequest.AmountCents == payment.AmountCents {
 		targetStatus = models.PaymentStatusRefunded
+		eventType = EventPaymentRefunded
 	} else {
 		targetStatus = models.PaymentStatusPartiallyRefunded
+		eventType = EventPaymentPartiallyRefunded
 	}
 	refund := createRefund(paymentID, merchantID, refundRequest.AmountCents)
 	updatedPayment, err := repository.RefundPayment(ctx, pool, paymentID, merchantID, payment.RefundedAmountCents, payment.RefundedAmountCents+refundRequest.AmountCents, targetStatus, refund)
@@ -60,7 +63,7 @@ func RefundPayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Prod
 		return models.Payment{}, ErrInternalServerError
 	}
 	err = producer.PublishPaymentEvent(ctx, kafka.PaymentEvent{
-		EventType:     EventPaymentRefunded,
+		EventType:     eventType,
 		PaymentID:     updatedPayment.ID,
 		MerchantID:    merchantID,
 		CustomerID:    updatedPayment.CustomerID,

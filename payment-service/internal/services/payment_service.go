@@ -13,11 +13,12 @@ import (
 )
 
 const (
-	EventPaymentCreated    = "payment.created"
-	EventPaymentProcessing = "payment.processing"
-	EventPaymentSucceeded  = "payment.succeeded"
-	EventPaymentFailed     = "payment.failed"
-	EventPaymentRefunded   = "payment.refunded"
+	EventPaymentCreated           = "payment.created"
+	EventPaymentProcessing        = "payment.processing"
+	EventPaymentSucceeded         = "payment.succeeded"
+	EventPaymentFailed            = "payment.failed"
+	EventPaymentRefunded          = "payment.refunded"
+	EventPaymentPartiallyRefunded = "payment.partially_refunded"
 )
 
 func createPaymentFromCreatePaymentRequest(r models.CreatePaymentRequest, merchantID uuid.UUID, idempotencyKey uuid.UUID) models.Payment {

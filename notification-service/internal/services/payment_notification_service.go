@@ -9,11 +9,12 @@ import (
 )
 
 const (
-	EventPaymentCreated    = "payment.created"
-	EventPaymentProcessing = "payment.processing"
-	EventPaymentSucceeded  = "payment.succeeded"
-	EventPaymentFailed     = "payment.failed"
-	EventPaymentRefunded   = "payment.refunded"
+	EventPaymentCreated           = "payment.created"
+	EventPaymentProcessing        = "payment.processing"
+	EventPaymentSucceeded         = "payment.succeeded"
+	EventPaymentFailed            = "payment.failed"
+	EventPaymentRefunded          = "payment.refunded"
+	EventPaymentPartiallyRefunded = "payment.partially_refunded"
 )
 
 func createMailBody(event models.PaymentEvent) string {
@@ -97,6 +98,20 @@ Best regards,
 Notification Service
 		`, event.CustomerName, event.PaymentID.String(), amountFull, amountRemainder, event.Currency)
 
+	case EventPaymentPartiallyRefunded:
+		return fmt.Sprintf(`
+Hi %s,
+
+A refund has been successfully processed for your payment.
+
+Payment ID: %s
+Refund Amount: %d.%02d %s
+Status: Partially Refunded
+
+Best regards,
+Notification Service
+		`, event.CustomerName, event.PaymentID.String(), amountFull, amountRemainder, event.Currency)
+
 	default:
 		return ""
 	}
@@ -148,6 +163,16 @@ func HandlePaymentEvent(event models.PaymentEvent, sender *mail.Sender) {
 			event.Currency,
 		)
 		if err := sender.Send(event.CustomerEmail, "Payment Refunded", body); err != nil {
+			log.Printf("Couldnt send message: %v, event: %+v", err, event)
+		}
+	case EventPaymentPartiallyRefunded:
+		log.Printf(
+			"Notification to %s: %d %s partially refunded",
+			event.CustomerEmail,
+			event.AmountCents,
+			event.Currency,
+		)
+		if err := sender.Send(event.CustomerEmail, "Payment Partially Refunded", body); err != nil {
 			log.Printf("Couldnt send message: %v, event: %+v", err, event)
 		}
 	default:
