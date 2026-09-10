@@ -58,10 +58,18 @@ func CreatePayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Prod
 	if err != nil {
 		return models.Payment{}, ErrInternalServerError
 	}
+	customer, err := repository.GetCustomerByID(ctx, pool, merchantID, createdPayment.CustomerID)
+	if err != nil {
+		return models.Payment{}, ErrInternalServerError
+	}
 	err = producer.PublishPaymentEvent(ctx, kafka.PaymentEvent{
-		EventType:  EventPaymentCreated,
-		PaymentID:  createdPayment.ID,
-		MerchantID: merchantID,
+		EventType:     EventPaymentCreated,
+		PaymentID:     createdPayment.ID,
+		MerchantID:    merchantID,
+		CustomerID:    createdPayment.CustomerID,
+		CustomerEmail: customer.Email,
+		AmountCents:   createdPayment.AmountCents,
+		Currency:      createdPayment.Currency,
 	})
 	if err != nil {
 		return models.Payment{}, ErrKafkaPublishEvent
@@ -87,10 +95,18 @@ func ProcessPayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Pro
 		}
 		return models.Payment{}, ErrInternalServerError
 	}
+	customer, err := repository.GetCustomerByID(ctx, pool, merchantID, updatedPayment.CustomerID)
+	if err != nil {
+		return models.Payment{}, ErrInternalServerError
+	}
 	err = producer.PublishPaymentEvent(ctx, kafka.PaymentEvent{
-		EventType:  EventPaymentProcessing,
-		PaymentID:  updatedPayment.ID,
-		MerchantID: merchantID,
+		EventType:     EventPaymentProcessing,
+		PaymentID:     updatedPayment.ID,
+		MerchantID:    merchantID,
+		CustomerID:    updatedPayment.CustomerID,
+		CustomerEmail: customer.Email,
+		AmountCents:   updatedPayment.AmountCents,
+		Currency:      updatedPayment.Currency,
 	})
 	if err != nil {
 		return models.Payment{}, ErrKafkaPublishEvent
@@ -116,10 +132,18 @@ func SucceedPayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Pro
 		}
 		return models.Payment{}, ErrInternalServerError
 	}
+	customer, err := repository.GetCustomerByID(ctx, pool, merchantID, updatedPayment.CustomerID)
+	if err != nil {
+		return models.Payment{}, ErrInternalServerError
+	}
 	err = producer.PublishPaymentEvent(ctx, kafka.PaymentEvent{
-		EventType:  EventPaymentSucceeded,
-		PaymentID:  updatedPayment.ID,
-		MerchantID: merchantID,
+		EventType:     EventPaymentSucceeded,
+		PaymentID:     updatedPayment.ID,
+		MerchantID:    merchantID,
+		CustomerID:    updatedPayment.CustomerID,
+		CustomerEmail: customer.Email,
+		AmountCents:   updatedPayment.AmountCents,
+		Currency:      updatedPayment.Currency,
 	})
 	if err != nil {
 		return models.Payment{}, ErrKafkaPublishEvent
@@ -145,10 +169,18 @@ func FailPayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Produc
 		}
 		return models.Payment{}, ErrInternalServerError
 	}
+	customer, err := repository.GetCustomerByID(ctx, pool, merchantID, updatedPayment.CustomerID)
+	if err != nil {
+		return models.Payment{}, ErrInternalServerError
+	}
 	err = producer.PublishPaymentEvent(ctx, kafka.PaymentEvent{
-		EventType:  EventPaymentFailed,
-		PaymentID:  updatedPayment.ID,
-		MerchantID: merchantID,
+		EventType:     EventPaymentFailed,
+		PaymentID:     updatedPayment.ID,
+		MerchantID:    merchantID,
+		CustomerID:    updatedPayment.CustomerID,
+		CustomerEmail: customer.Email,
+		AmountCents:   updatedPayment.AmountCents,
+		Currency:      updatedPayment.Currency,
 	})
 	if err != nil {
 		return models.Payment{}, ErrKafkaPublishEvent

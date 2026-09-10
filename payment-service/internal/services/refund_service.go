@@ -55,10 +55,18 @@ func RefundPayment(ctx context.Context, pool *pgxpool.Pool, producer *kafka.Prod
 		}
 		return models.Payment{}, ErrInternalServerError
 	}
+	customer, err := repository.GetCustomerByID(ctx, pool, merchantID, updatedPayment.CustomerID)
+	if err != nil {
+		return models.Payment{}, ErrInternalServerError
+	}
 	err = producer.PublishPaymentEvent(ctx, kafka.PaymentEvent{
-		EventType:  EventPaymentRefunded,
-		PaymentID:  updatedPayment.ID,
-		MerchantID: merchantID,
+		EventType:     EventPaymentRefunded,
+		PaymentID:     updatedPayment.ID,
+		MerchantID:    merchantID,
+		CustomerID:    updatedPayment.CustomerID,
+		CustomerEmail: customer.Email,
+		AmountCents:   refund.AmountCents,
+		Currency:      updatedPayment.Currency,
 	})
 	if err != nil {
 		return models.Payment{}, ErrKafkaPublishEvent
