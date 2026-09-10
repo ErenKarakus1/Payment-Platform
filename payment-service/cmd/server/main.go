@@ -53,6 +53,8 @@ func main() {
 	router.POST("/payments/:id/succeed", handlers.SucceedPaymentHandler(pool, producer))
 	router.POST("/payments/:id/fail", handlers.FailPaymentHandler(pool, producer))
 
-	router.Run(":8082")
+	if err := router.Run(":8082"); err != nil {
+		log.Fatal(err)
+	}
 
 }
