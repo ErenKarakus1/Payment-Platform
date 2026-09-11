@@ -647,11 +647,23 @@ Start Kafka:
 docker run -d --name kafka -p 9092:9092 apache/kafka:latest
 ```
 
+Create the payment events topic:
+
+```bash
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --create \
+  --topic payment.events \
+  --bootstrap-server localhost:9092 \
+  --partitions 1 \
+  --replication-factor 1
+```
+
 The application currently expects:
 
 ```text
 Redis: localhost:6379
 Kafka: localhost:9092
+Kafka topic: payment.events
 ```
 
 The gateway also currently expects:
