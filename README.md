@@ -654,6 +654,7 @@ http://localhost:8080
 * Idempotency keys prevent duplicate payment creation.
 * Rate limiting is implemented per merchant and route using Redis.
 * Authentication endpoints are currently not rate-limited.
+* Payment status transitions are validated to prevent invalid state changes.
 
 ## Known Limitations
 
@@ -667,6 +668,7 @@ http://localhost:8080
 * Kafka publishing does not use a transactional outbox.
 * Notification failures have no retry/DLQ mechanism.
 * Service addresses are currently hardcoded.
+* The rate limiter uses a fixed-window algorithm and may allow bursts at window boundaries.
 
 ## Future Improvements
 
