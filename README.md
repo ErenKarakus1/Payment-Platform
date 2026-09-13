@@ -682,6 +682,7 @@ http://localhost:8080
 * Refresh tokens and token revocation
 * Environment-based service configuration
 * Payment reconciliation
+* Prometheus metrics and Grafana dashboards
 
 ## License
 
