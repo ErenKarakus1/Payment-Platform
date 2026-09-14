@@ -683,6 +683,9 @@ http://localhost:8080
 * Environment-based service configuration
 * Payment reconciliation
 * Prometheus metrics and Grafana dashboards
+* Service-to-service authentication
+* Merchant-configurable notification preferences
+* Admin dashboard for payment monitoring
 
 ## License
 
